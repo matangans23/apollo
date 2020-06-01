@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseSetup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">databases</a> &gt; <span class="el_source">DatabaseSetup.java</span></div><h1>DatabaseSetup.java</h1><pre class="source lang-java linenums">package databases;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+/**
+ * This class sets up the databases needed for the Apollo platform.
+ */
+public final class DatabaseSetup {
+
+  /**
+   * constructor to prevent this class from being instantiated.
+   */
+  private DatabaseSetup() {
+    // not called
+  }
+
+  /**
+   * Connect to a sample database.
+   *
+   */
+  public static void createNewDatabase() {
+
+<span class="fc" id="L29">    String url = &quot;jdbc:sqlite:data/db/apollo.sqlite3&quot;;</span>
+    try {
+<span class="nc" id="L31">      FileReader file = new FileReader(url);</span>
+<span class="nc" id="L32">      return;</span>
+<span class="fc" id="L33">    } catch (FileNotFoundException e1) {</span>
+<span class="fc" id="L34">      System.out.println(&quot;Generating Database...&quot;);</span>
+    }
+
+<span class="fc" id="L37">    try (Connection conn = DriverManager.getConnection(url)) {</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">      if (conn != null) {</span>
+<span class="fc" id="L39">        DatabaseMetaData meta = conn.getMetaData();</span>
+<span class="fc" id="L40">        System.out.println(&quot;The driver name is &quot; + meta.getDriverName());</span>
+        PreparedStatement prep;
+        // Creates the table to store doctor details
+<span class="fc" id="L43">        prep = conn.prepareStatement(&quot;CREATE TABLE IF NOT EXISTS doctor(&quot; + &quot;id UUID,&quot;</span>
+            + &quot;first_name TEXT,&quot; + &quot;mid_name TEXT,&quot; + &quot;last_name TEXT,&quot; + &quot;email NVARCHAR(320),&quot;
+            + &quot;username NVARCHAR(320) UNIQUE,&quot; + &quot;password NVARCHAR(320),&quot;
+            + &quot;phoneNumber NVARCHAR(320),&quot; + &quot;institution TEXT);&quot;);
+<span class="fc" id="L47">        prep.executeUpdate();</span>
+<span class="fc" id="L48">        System.out.println(&quot;A new database has been created.&quot;);</span>
+        // Creates the table to store patient details
+<span class="fc" id="L50">        prep = conn.prepareStatement(&quot;CREATE TABLE IF NOT EXISTS patient(&quot; + &quot;id UUID,&quot;</span>
+            + &quot;first_name TEXT,&quot; + &quot;mid_name TEXT,&quot; + &quot;last_name TEXT,&quot; + &quot;date_of_birth TEXT,&quot;
+            + &quot;email NVARCHAR(320),&quot; + &quot;phoneNumber NVARCHAR(320),&quot; + &quot;emergency_phone_number TEXT,&quot;
+            + &quot;primary_doctor TEXT);&quot;);
+<span class="fc" id="L54">        prep.executeUpdate();</span>
+        // Creates the table to store visit detials
+<span class="fc" id="L56">        prep = conn.prepareStatement(&quot;CREATE TABLE IF NOT EXISTS appointments(visit_id UUID,&quot;</span>
+            + &quot;doctor_username TEXT,&quot; + &quot;patient_id TEXT,&quot; + &quot;appointment_date Text,&quot; + &quot;time TEXT,&quot;
+            + &quot;audio_file NVARCHAR(320),&quot; + &quot;transcript  NVARCHAR(320),&quot; + &quot;summary  NVARCHAR(320),&quot;
+            + &quot;visit_type NVARCHAR(320));&quot;);
+<span class="fc" id="L60">        prep.executeUpdate();</span>
+<span class="fc" id="L61">        System.out.println(&quot;A new database has been created.&quot;);</span>
+      }
+<span class="nc" id="L63">    } catch (SQLException e) {</span>
+<span class="nc" id="L64">      System.err.println(&quot;ERROR: db not made&quot;);</span>
+    }
+<span class="fc" id="L66">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VisitDatum.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">patient</a> &gt; <span class="el_source">VisitDatum.java</span></div><h1>VisitDatum.java</h1><pre class="source lang-java linenums">package patient;
+
+import java.util.List;
+
+import registrationandlogin.Encryption;
+
+/**
+ * Creates an object for visit registered.
+ */
+public class VisitDatum implements Datum {
+  private String id;
+  private String pUuid;
+  private String date;
+  private byte[] transcript;
+  private byte[] audioRecording;
+  private String time;
+  private byte[] visitType;
+
+  /**
+   * Constructor with information from database.
+   *
+   * @param details        list of id, doctor, patient, date
+   * @param transcript     recorded text
+   * @param audioRecording audio recorded
+   * @param time           of appointment
+   * @param visitype       type of visit
+   */
+<span class="fc" id="L28">  public VisitDatum(List&lt;String&gt; details, byte[] transcript, byte[] audioRecording, String time,</span>
+      byte[] visitype) {
+<span class="fc" id="L30">    this.id = details.get(0);</span>
+<span class="fc" id="L31">    this.pUuid = details.get(2);</span>
+<span class="fc" id="L32">    this.date = details.get(3);</span>
+<span class="fc" id="L33">    this.transcript = transcript;</span>
+<span class="fc" id="L34">    this.audioRecording = audioRecording;</span>
+<span class="fc" id="L35">    this.time = time;</span>
+<span class="fc" id="L36">    this.visitType = visitype;</span>
+<span class="fc" id="L37">  }</span>
+
+  // ---------- Getters for VisitDatum ----------
+  @Override
+  public String getID() {
+<span class="fc" id="L42">    return this.id;</span>
+  }
+
+  /**
+   * @return patient's id
+   */
+  public String getPID() {
+<span class="fc" id="L49">    return this.pUuid;</span>
+  }
+
+  /**
+   * @return appointment date
+   */
+  public String getDate() {
+<span class="fc" id="L56">    return this.date;</span>
+  }
+
+  /**
+   * @return transcript
+   */
+  public String getTranscript() {
+    try {
+<span class="fc" id="L64">      return Encryption.decrypt(this.transcript);</span>
+<span class="nc" id="L65">    } catch (Exception e) {</span>
+<span class="nc" id="L66">      System.err.println(&quot;ERROR: decryption of transcript in visitDatum&quot;);</span>
+    }
+<span class="nc" id="L68">    return &quot;&quot;;</span>
+  }
+
+  /**
+   * @return audio
+   */
+  public String getAudioRecording() {
+    try {
+<span class="fc" id="L76">      return Encryption.decrypt(this.audioRecording);</span>
+<span class="nc" id="L77">    } catch (Exception e) {</span>
+<span class="nc" id="L78">      System.err.println(&quot;ERROR: decryption of audio path in visitDatum&quot;);</span>
+    }
+<span class="nc" id="L80">    return &quot;&quot;;</span>
+  }
+
+  /**
+   * @return appointment time
+   */
+  public String getTime() {
+<span class="fc" id="L87">    return this.time;</span>
+  }
+
+  /**
+   * @return type of visit
+   */
+  public String getVisitType() {
+    try {
+<span class="fc" id="L95">      return Encryption.decrypt(this.visitType);</span>
+<span class="nc" id="L96">    } catch (Exception e) {</span>
+<span class="nc" id="L97">      System.err.println(&quot;ERROR: decryption of visitype in visitDatum&quot;);</span>
+    }
+<span class="nc" id="L99">    return &quot;&quot;;</span>
+  }
+
+  // ---------- Setters for VisitDatum ----------
+  @Override
+  public void setID(String newId) {
+<span class="fc" id="L105">    this.id = newId;</span>
+<span class="fc" id="L106">  }</span>
+
+  /**
+   * @param date to set
+   */
+  public void setDate(String date) {
+<span class="fc" id="L112">    this.date = date;</span>
+<span class="fc" id="L113">  }</span>
+
+  /**
+   * @param transcript to set
+   */
+  public void setTranscript(byte[] transcript) {
+<span class="fc" id="L119">    this.transcript = transcript;</span>
+<span class="fc" id="L120">  }</span>
+
+  /**
+   * @param audio to assign
+   */
+  public void setAudioRecording(byte[] audio) {
+<span class="fc" id="L126">    this.audioRecording = audio;</span>
+<span class="fc" id="L127">  }</span>
+
+  /**
+   * @param time to set
+   */
+  public void setTime(String time) {
+<span class="fc" id="L133">    this.time = time;</span>
+<span class="fc" id="L134">  }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

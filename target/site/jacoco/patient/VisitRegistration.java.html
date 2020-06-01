@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VisitRegistration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">patient</a> &gt; <span class="el_source">VisitRegistration.java</span></div><h1>VisitRegistration.java</h1><pre class="source lang-java linenums">package patient;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.List;
+import java.util.UUID;
+
+import databases.Database;
+import registrationandlogin.Encryption;
+import registrationandlogin.RegisterData;
+
+/**
+ * Class to deal with registering a visit into the database.
+ */
+<span class="fc" id="L15">public class VisitRegistration implements RegisterData {</span>
+
+  static final int COL7 = 7;
+  static final int COL8 = 8;
+  static final int COL9 = 9;
+
+  @Override
+  public void register(List&lt;String&gt; registrationDetails) {
+<span class="fc" id="L23">    Connection conn = Database.getConn();</span>
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L26">      prep = conn.prepareStatement(&quot;INSERT INTO appointments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);&quot;);</span>
+<span class="fc" id="L27">      UUID uuid = UUID.randomUUID();</span>
+<span class="fc" id="L28">      prep.setString(1, uuid.toString());</span>
+<span class="fc" id="L29">      prep.setString(2, registrationDetails.get(0)); // doctor username</span>
+<span class="fc" id="L30">      prep.setString(3, registrationDetails.get(1)); // patient id</span>
+<span class="fc" id="L31">      prep.setString(4, registrationDetails.get(2)); // date</span>
+      // String path = &quot;data/hendrix.wav&quot;;
+<span class="fc" id="L33">      prep.setString(5, registrationDetails.get(3));</span>
+<span class="fc" id="L34">      prep.setBytes(6, Encryption.encrypt(registrationDetails.get(4))); // audio file</span>
+<span class="fc" id="L35">      prep.setBytes(COL7, Encryption.encrypt(registrationDetails.get(5))); // transcript</span>
+<span class="fc" id="L36">      prep.setBytes(COL8, Encryption.encrypt(registrationDetails.get(6))); // summary</span>
+<span class="fc" id="L37">      prep.setBytes(COL9, Encryption.encrypt(registrationDetails.get(COL7))); // visit Type.</span>
+<span class="fc" id="L38">      prep.addBatch();</span>
+<span class="fc" id="L39">      prep.executeBatch();</span>
+<span class="pc" id="L40">    } catch (Exception e) { // ask about this</span>
+<span class="nc" id="L41">      System.err.println(&quot;ERROR: error connecting to database for registration&quot;);</span>
+    }
+<span class="fc" id="L43">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

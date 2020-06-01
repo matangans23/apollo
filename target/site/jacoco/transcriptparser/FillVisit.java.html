@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FillVisit.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">transcriptparser</a> &gt; <span class="el_source">FillVisit.java</span></div><h1>FillVisit.java</h1><pre class="source lang-java linenums">package transcriptparser;
+
+import java.util.List;
+
+import searchalgorithms.KMP;
+
+/**
+ * This class fills in the reasons for visit portion of our visit summary.
+ *
+ */
+public class FillVisit {
+  private String transcript;
+
+  /**
+   * Constructor for the FillVisit class.
+   *
+   * @param fullTranscript A String, representing the full visit transcript.
+   */
+<span class="fc" id="L19">  public FillVisit(String fullTranscript) {</span>
+<span class="fc" id="L20">    transcript = fullTranscript;</span>
+<span class="fc" id="L21">  }</span>
+
+  /**
+   * This method gets the correct portion of the EHR from which we can find
+   * reasons for visit.
+   *
+   * @return A String, representing the found reasons for visit.
+   */
+  public String getPortion() {
+<span class="fc" id="L30">    KMP full = new KMP(transcript.toCharArray());</span>
+    try {
+<span class="fc" id="L32">      Integer startIndex = -1; // get start phrase</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">      for (String phrase : AcceptablePhrases.getVisitStartPhrases()) {</span>
+<span class="fc" id="L34">        List&lt;Integer&gt; indices = full.search(phrase.toCharArray());</span>
+<span class="pc bpc" id="L35" title="1 of 4 branches missed.">        if (indices != null &amp;&amp; !indices.isEmpty()) {</span>
+<span class="fc" id="L36">          startIndex = indices.get(0) + phrase.length();</span>
+<span class="fc" id="L37">          break;</span>
+        }
+<span class="fc" id="L39">      }</span>
+<span class="fc" id="L40">      Integer endIndex = -1; // get end phrase</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">      for (String phrase : AcceptablePhrases.getVisitEndPhrases()) {</span>
+<span class="fc" id="L42">        List&lt;Integer&gt; indices = full.search(phrase.toCharArray());</span>
+<span class="pc bpc" id="L43" title="1 of 4 branches missed.">        if (indices != null &amp;&amp; !indices.isEmpty()) {</span>
+<span class="fc" id="L44">          endIndex = indices.get(0);</span>
+<span class="fc" id="L45">          break;</span>
+        }
+<span class="fc" id="L47">      }</span>
+<span class="fc" id="L48">      String portion = transcript.substring(startIndex, endIndex);</span>
+<span class="fc" id="L49">      return portion;</span>
+<span class="fc" id="L50">    } catch (Exception e) {</span>
+<span class="fc" id="L51">      System.err.println(&quot;ERROR: portion not found&quot;);</span>
+<span class="fc" id="L52">      return &quot;&quot;;</span>
+    }
+
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

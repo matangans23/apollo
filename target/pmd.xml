@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd xmlns="http://pmd.sourceforge.net/report/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/report/2.0.0 http://pmd.sourceforge.net/report_2_0_0.xsd"
+    version="6.13.0" timestamp="2020-05-04T12:30:27.809">
+<file name="/Users/yisgavgans/Documents/course/cs0320/term-project-hzaki1-mabouela-mgans-mlunghi-1/src/main/java/apollo/Main.java">
+<violation beginline="389" endline="389" begincolumn="22" endcolumn="25" rule="UnusedLocalVariable" ruleset="Best Practices" package="apollo" class="Main$VisitHandler" method="handle" variable="qmap" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_bestpractices.html#unusedlocalvariable" priority="3">
+Avoid unused local variables such as 'qmap'.
+</violation>
+</file>
+<file name="/Users/yisgavgans/Documents/course/cs0320/term-project-hzaki1-mabouela-mgans-mlunghi-1/src/main/java/databases/Database.java">
+<violation beginline="50" endline="50" begincolumn="18" endcolumn="21" rule="UnusedLocalVariable" ruleset="Best Practices" package="databases" class="Database" method="makeDatabase" variable="file" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_bestpractices.html#unusedlocalvariable" priority="3">
+Avoid unused local variables such as 'file'.
+</violation>
+<violation beginline="132" endline="132" begincolumn="9" endcolumn="20" rule="AvoidBranchingStatementAsLastInLoop" ruleset="Error Prone" package="databases" class="Database" method="ifUsernameExists" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_errorprone.html#avoidbranchingstatementaslastinloop" priority="2">
+Avoid using a branching statement as the last in a loop.
+</violation>
+</file>
+<file name="/Users/yisgavgans/Documents/course/cs0320/term-project-hzaki1-mabouela-mgans-mlunghi-1/src/main/java/databases/DatabaseSetup.java">
+<violation beginline="31" endline="31" begincolumn="18" endcolumn="21" rule="UnusedLocalVariable" ruleset="Best Practices" package="databases" class="DatabaseSetup" method="createNewDatabase" variable="file" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_bestpractices.html#unusedlocalvariable" priority="3">
+Avoid unused local variables such as 'file'.
+</violation>
+</file>
+<file name="/Users/yisgavgans/Documents/course/cs0320/term-project-hzaki1-mabouela-mgans-mlunghi-1/src/main/java/registrationandlogin/Login.java">
+<violation beginline="48" endline="48" begincolumn="9" endcolumn="20" rule="ReturnFromFinallyBlock" ruleset="Error Prone" package="registrationandlogin" class="Login" method="loginUser" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_errorprone.html#returnfromfinallyblock" priority="3">
+Avoid returning from a finally block
+</violation>
+</file>
+<file name="/Users/yisgavgans/Documents/course/cs0320/term-project-hzaki1-mabouela-mgans-mlunghi-1/src/main/java/speechtotext/RunDeepSpeech.java">
+<violation beginline="27" endline="27" begincolumn="18" endcolumn="21" rule="UnusedLocalVariable" ruleset="Best Practices" package="speechtotext" class="RunDeepSpeech" method="transcribe" variable="file" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_bestpractices.html#unusedlocalvariable" priority="3">
+Avoid unused local variables such as 'file'.
+</violation>
+<violation beginline="33" endline="33" begincolumn="13" endcolumn="19" rule="UnusedLocalVariable" ruleset="Best Practices" package="speechtotext" class="RunDeepSpeech" method="transcribe" variable="process" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_bestpractices.html#unusedlocalvariable" priority="3">
+Avoid unused local variables such as 'process'.
+</violation>
+</file>
+<file name="/Users/yisgavgans/Documents/course/cs0320/term-project-hzaki1-mabouela-mgans-mlunghi-1/src/main/java/transcriptparser/FillSymptoms.java">
+<violation beginline="82" endline="82" begincolumn="9" endcolumn="31" rule="MisplacedNullCheck" ruleset="Error Prone" package="transcriptparser" class="FillSymptoms" method="getSymptoms" externalInfoUrl="https://pmd.github.io/pmd-6.13.0/pmd_rules_java_errorprone.html#misplacednullcheck" priority="3">
+The null check here is misplaced; if the variable is null there will be a NullPointerException
+</violation>
+</file>
+</pmd>

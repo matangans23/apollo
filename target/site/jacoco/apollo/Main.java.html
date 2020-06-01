@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Main.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">apollo</a> &gt; <span class="el_source">Main.java</span></div><h1>Main.java</h1><pre class="source lang-java linenums">package apollo;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.http.Part;
+
+import com.google.common.collect.ImmutableMap;
+
+import commands.ConnectToDatabase;
+import databases.Database;
+import freemarker.template.Configuration;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import patient.PatientDatum;
+import patient.PatientRegistration;
+import patient.VisitRegistration;
+import registrationandlogin.DoctorRegistration;
+import registrationandlogin.Encryption;
+import registrationandlogin.Login;
+import registrationandlogin.RegisterData;
+import repl.Repl;
+import spark.ExceptionHandler;
+import spark.ModelAndView;
+import spark.QueryParamsMap;
+import spark.Request;
+import spark.Response;
+import spark.Spark;
+import spark.TemplateViewRoute;
+import spark.template.freemarker.FreeMarkerEngine;
+import speechtotext.RunDeepSpeech;
+import transcriptparser.SearchAllTranscripts;
+import transcriptparser.ToParse;
+
+/**
+ * The Main class of our project. This is where execution begins.
+ *
+ */
+public final class Main {
+
+  private static final int DEFAULT_PORT = 4567;
+
+  /**
+   * The initial method called when execution begins.
+   *
+   * @param args An array of command line arguments.
+   * @throws IOException will throw exception if this happens
+   */
+  public static void main(String[] args) throws IOException {
+<span class="nc" id="L63">    Encryption.registerEncryption();</span>
+<span class="nc" id="L64">    new Main(args).run();</span>
+
+<span class="nc" id="L66">  }</span>
+
+  private String[] args;
+  private static String error;
+
+<span class="nc" id="L71">  private Main(String[] args) {</span>
+<span class="nc" id="L72">    this.args = args;</span>
+<span class="nc" id="L73">    error = &quot;&quot;;</span>
+<span class="nc" id="L74">  }</span>
+
+  /**
+   * Method to run program in terminal with option of GUI tag.
+   *
+   * @throws IOException May results in IO Exception in case of unwanted
+   *                     behaviour.
+   */
+  private void run() throws IOException {
+<span class="nc" id="L83">    OptionParser parser = new OptionParser();</span>
+<span class="nc" id="L84">    parser.accepts(&quot;gui&quot;);</span>
+<span class="nc" id="L85">    parser.accepts(&quot;port&quot;).withRequiredArg().ofType(Integer.class).defaultsTo(DEFAULT_PORT);</span>
+<span class="nc" id="L86">    OptionSet options = parser.parse(args);</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">    if (options.has(&quot;gui&quot;)) {</span>
+<span class="nc" id="L89">      ConnectToDatabase connect = new ConnectToDatabase();</span>
+<span class="nc" id="L90">      connect.executeCommand(null);</span>
+<span class="nc" id="L91">      runSparkServer((int) options.valueOf(&quot;port&quot;));</span>
+    }
+<span class="nc" id="L93">    Repl repl = new Repl();</span>
+<span class="nc" id="L94">    repl.startRepl();</span>
+
+<span class="nc" id="L96">  }</span>
+
+  /**
+   * Method to create the FreeMarker Engine used to build GUI.
+   *
+   * @return A free market engine.
+   */
+  private static FreeMarkerEngine createEngine() {
+<span class="nc" id="L104">    Configuration config = new Configuration();</span>
+<span class="nc" id="L105">    File templates = new File(&quot;src/main/resources/spark/template/freemarker&quot;);</span>
+    try {
+<span class="nc" id="L107">      config.setDirectoryForTemplateLoading(templates);</span>
+<span class="nc" id="L108">    } catch (IOException ioe) {</span>
+<span class="nc" id="L109">      System.out.printf(&quot;ERROR: Unable use %s for template loading.%n&quot;, templates);</span>
+<span class="nc" id="L110">      System.exit(1);</span>
+    }
+<span class="nc" id="L112">    return new FreeMarkerEngine(config);</span>
+  }
+
+  /**
+   * Method that maps all necessary Spark Rotues for our GUI.
+   *
+   * @param port A port number on which to run our GUI.
+   */
+  private void runSparkServer(int port) {
+<span class="nc" id="L121">    Spark.port(port);</span>
+<span class="nc" id="L122">    Spark.externalStaticFileLocation(&quot;src/main/resources/static&quot;);</span>
+<span class="nc" id="L123">    Spark.exception(Exception.class, new ExceptionPrinter());</span>
+
+<span class="nc" id="L125">    FreeMarkerEngine freeMarker = createEngine();</span>
+
+    // Setup Spark Routes
+<span class="nc" id="L128">    Spark.get(&quot;/apollo&quot;, new FrontHandler(), freeMarker);</span>
+<span class="nc" id="L129">    Spark.get(&quot;/error&quot;, new ErrorHandler(), freeMarker);</span>
+<span class="nc" id="L130">    Spark.get(&quot;/register&quot;, new RegisterHandler(), freeMarker);</span>
+<span class="nc" id="L131">    Spark.post(&quot;/registerDoctor&quot;, new RegisterDoctorHandler(), freeMarker);</span>
+<span class="nc" id="L132">    Spark.post(&quot;/loginDoctor&quot;, new LoginDoctorHandler(), freeMarker);</span>
+<span class="nc" id="L133">    Spark.post(&quot;/send/:username/:patient&quot;, new SendHandler(), freeMarker);</span>
+<span class="nc" id="L134">    Spark.get(&quot;/apollo/:username&quot;, new BaseHandler(), freeMarker);</span>
+<span class="nc" id="L135">    Spark.get(&quot;/apollo/registerPatient/:username&quot;, new RegisterPatientHandler(), freeMarker);</span>
+<span class="nc" id="L136">    Spark.post(&quot;/apollo/registerPatient/addPatient/:username&quot;, new AddPatientHandler(), freeMarker);</span>
+<span class="nc" id="L137">    Spark.get(&quot;/apollo/patientBase/:username/:patient&quot;, new VisitHandler(), freeMarker);</span>
+<span class="nc" id="L138">    Spark.get(&quot;/apollo/account-details/:username&quot;, new AccountDetailsHandler(), freeMarker);</span>
+<span class="nc" id="L139">    Spark.get(&quot;/apollo/:username/:patient/registerVisit&quot;, new NewVisitHandler(), freeMarker);</span>
+<span class="nc" id="L140">    Spark.get(&quot;/apollo/:username/:patient/visit/:date/:id&quot;, new SingleVisitHandler(), freeMarker);</span>
+<span class="nc" id="L141">  }</span>
+
+  /**
+   * Handle requests to the front page of our website.
+   *
+   */
+  private static class FrontHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L150">      Map&lt;String, Object&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;status&quot;, error);</span>
+<span class="nc" id="L151">      error = &quot;&quot;;</span>
+<span class="nc" id="L152">      return new ModelAndView(map, &quot;homepage.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Display an error page when an exception occurs in the server.
+   *
+   */
+  private static class ExceptionPrinter implements ExceptionHandler {
+    @Override
+    public void handle(Exception e, Request req, Response res) {
+<span class="nc" id="L163">      res.status(500);</span>
+<span class="nc" id="L164">      StringWriter stacktrace = new StringWriter();</span>
+<span class="nc" id="L165">      try (PrintWriter pw = new PrintWriter(stacktrace)) {</span>
+<span class="nc" id="L166">        pw.println(&quot;&lt;pre&gt;&quot;);</span>
+<span class="nc" id="L167">        e.printStackTrace(pw);</span>
+<span class="nc" id="L168">        pw.println(&quot;&lt;/pre&gt;&quot;);</span>
+      }
+<span class="nc" id="L170">      res.body(stacktrace.toString());</span>
+<span class="nc" id="L171">    }</span>
+  }
+
+  /**
+   * Handle requests to the front page of our website.
+   *
+   */
+  private static class RegisterHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L181">      Map&lt;String, Object&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;status&quot;, error);</span>
+<span class="nc" id="L182">      error = &quot;&quot;;</span>
+<span class="nc" id="L183">      return new ModelAndView(map, &quot;register.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Handles requests to log a doctor into the Apollo platform.
+   *
+   */
+  private static class LoginDoctorHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L194">      QueryParamsMap qm = req.queryMap();</span>
+<span class="nc" id="L195">      Login login = new Login();</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">      if (login.loginUser(qm.value(&quot;username&quot;), qm.value(&quot;password&quot;)) == null) {</span>
+<span class="nc" id="L197">        error = &quot;Username/Password incorrect&quot;;</span>
+<span class="nc" id="L198">        res.redirect(&quot;/apollo&quot;);</span>
+<span class="nc" id="L199">        return null;</span>
+      }
+<span class="nc" id="L201">      error = &quot;&quot;;</span>
+<span class="nc" id="L202">      System.out.println(req.session());</span>
+<span class="nc" id="L203">      res.redirect(&quot;/apollo/:&quot; + qm.value(&quot;username&quot;));</span>
+<span class="nc" id="L204">      return null;</span>
+    }
+  }
+
+  /**
+   * Handle requests to register a doctor into our Apollo platform.
+   *
+   */
+  private static class RegisterDoctorHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L215">      QueryParamsMap qm = req.queryMap();</span>
+<span class="nc" id="L216">      List&lt;String&gt; forRegister = new ArrayList&lt;String&gt;();</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">      if (!qm.value(&quot;password&quot;).equals(qm.value(&quot;passwordVali&quot;))) {</span>
+<span class="nc" id="L219">        error = &quot;Passwords do not match!&quot;;</span>
+<span class="nc" id="L220">        res.redirect(&quot;/register&quot;);</span>
+<span class="nc" id="L221">        return null;</span>
+      }
+<span class="nc bnc" id="L223" title="All 2 branches missed.">      if (Database.ifUsernameExists(qm.value(&quot;username&quot;))) {</span>
+<span class="nc" id="L224">        error = &quot;Username is unavailable&quot;;</span>
+<span class="nc" id="L225">        res.redirect(&quot;/register&quot;);</span>
+<span class="nc" id="L226">        return null;</span>
+      }
+<span class="nc" id="L228">      forRegister.add(qm.value(&quot;first_name&quot;));</span>
+<span class="nc" id="L229">      forRegister.add(qm.value(&quot;middle_name&quot;));</span>
+<span class="nc" id="L230">      forRegister.add(qm.value(&quot;last_name&quot;));</span>
+<span class="nc" id="L231">      forRegister.add(qm.value(&quot;email&quot;));</span>
+<span class="nc" id="L232">      forRegister.add(qm.value(&quot;username&quot;));</span>
+<span class="nc" id="L233">      forRegister.add(qm.value(&quot;password&quot;));</span>
+<span class="nc" id="L234">      forRegister.add(qm.value(&quot;phone&quot;));</span>
+<span class="nc" id="L235">      forRegister.add(qm.value(&quot;institution&quot;));</span>
+<span class="nc" id="L236">      DoctorRegistration register = new DoctorRegistration();</span>
+<span class="nc" id="L237">      register.register(forRegister);</span>
+<span class="nc" id="L238">      error = &quot;&quot;;</span>
+<span class="nc" id="L239">      res.redirect(&quot;/apollo&quot;);</span>
+<span class="nc" id="L240">      return null;</span>
+    }
+  }
+
+  /**
+   * Handles requests to actually create a visit entry into our database using a
+   * certain recording. This is also where a text transcript is created and where
+   * a visit summary is added to the database.
+   */
+  private static class SendHandler implements TemplateViewRoute {
+
+    static final int CONFIG = 100000000;
+    static final int BYTES = 1024;
+    static final int START = 0; // indices for file name
+    static final int MID = 10;
+    static final int MID2 = 11;
+    static final int END = 19;
+
+    @Override
+    public ModelAndView handle(Request request, Response response) throws Exception {
+      try {
+<span class="nc" id="L261">        request.raw().setAttribute(&quot;org.eclipse.jetty.multipartConfig&quot;,</span>
+<span class="nc" id="L262">            new MultipartConfigElement(&quot;/tmp&quot;, CONFIG, CONFIG, BYTES));</span>
+<span class="nc" id="L263">        String filename = request.raw().getPart(&quot;audio_data&quot;).getSubmittedFileName();</span>
+<span class="nc" id="L264">        String visitType = request.raw().getPart(&quot;typeMeeting&quot;).getSubmittedFileName();</span>
+<span class="nc" id="L265">        Part uploadedFile = request.raw().getPart(&quot;audio_data&quot;);</span>
+<span class="nc" id="L266">        final InputStream in = uploadedFile.getInputStream();</span>
+<span class="nc" id="L267">        Files.copy(in, Paths.get(&quot;src/main/resources/static/audio/&quot; + filename + &quot;.wav&quot;));</span>
+<span class="nc" id="L268">        RunDeepSpeech.transcribe(&quot;src/main/resources/static/audio/&quot; + filename + &quot;.wav&quot;);</span>
+<span class="nc" id="L269">        System.out.println(&quot;Transcribing...&quot;);</span>
+<span class="nc" id="L270">        String username = request.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L271">        String patient = request.params(&quot;:patient&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L272">        File myObj = new File(filename + &quot;.txt&quot;);</span>
+<span class="nc" id="L273">        myObj.createNewFile();</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        while (Paths.get(filename + &quot;.txt&quot;).toFile().exists()) {</span>
+<span class="nc" id="L275">          System.out.println(&quot;Waiting on speech-to-text...&quot;);</span>
+        }
+<span class="nc" id="L277">        String content = Files.readString(Paths.get(&quot;data/transcripts/test.txt&quot;),</span>
+<span class="nc" id="L278">            StandardCharsets.US_ASCII);</span>
+
+<span class="nc" id="L280">        RegisterData visitRegister = new VisitRegistration();</span>
+<span class="nc" id="L281">        System.out.println(in.readAllBytes().toString());</span>
+<span class="nc" id="L282">        ToParse parser = new ToParse();</span>
+<span class="nc" id="L283">        ArrayList&lt;String&gt; input = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L284">        input.add(&quot;parseTranscript&quot;);</span>
+<span class="nc" id="L285">        input.add(&quot;data/transcripts/test.txt&quot;);</span>
+<span class="nc" id="L286">        input.add(&quot;data/categorized_symptoms.csv&quot;);</span>
+<span class="nc" id="L287">        parser.executeCommand(input);</span>
+<span class="nc" id="L288">        String summary = parser.getResult();</span>
+<span class="nc" id="L289">        List&lt;String&gt; visitStrings = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L290">        visitStrings.add(username);</span>
+<span class="nc" id="L291">        visitStrings.add(patient);</span>
+<span class="nc" id="L292">        visitStrings.add(filename.substring(START, MID));</span>
+<span class="nc" id="L293">        visitStrings.add(filename.substring(MID2, END));</span>
+<span class="nc" id="L294">        visitStrings.add(&quot;src/main/resources/static/audio/&quot; + filename + &quot;.wav&quot;);</span>
+<span class="nc" id="L295">        visitStrings.add(content);</span>
+<span class="nc" id="L296">        visitStrings.add(summary);</span>
+<span class="nc" id="L297">        visitStrings.add(visitType);</span>
+<span class="nc" id="L298">        visitRegister.register(visitStrings);</span>
+<span class="nc" id="L299">        Map&lt;String, Object&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;status&quot;, error);</span>
+<span class="nc" id="L300">        error = &quot;&quot;;</span>
+
+<span class="nc" id="L302">        Paths.get(&quot;data/transcripts/test.txt&quot;).toFile().delete();</span>
+<span class="nc" id="L303">        return new ModelAndView(map, &quot;recording.ftl&quot;);</span>
+<span class="nc" id="L304">      } catch (Exception e) {</span>
+<span class="nc" id="L305">        e.printStackTrace();</span>
+<span class="nc" id="L306">        return null;</span>
+      }
+    }
+
+  }
+
+  /**
+   * Handle requests to the base page of our platform, where a doctor can see al
+   * infromation about patients and register new patients.
+   *
+   */
+  private static class BaseHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L320">      String username = req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L321">      String docName = Database.getDocName(username);</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">      if (docName.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L323">        res.redirect(&quot;/error&quot;);</span>
+<span class="nc" id="L324">        return null;</span>
+      }
+<span class="nc" id="L326">      String route = &quot;/apollo/registerPatient/:&quot; + username;</span>
+<span class="nc" id="L327">      Map&lt;String, String&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;docName&quot;, docName, &quot;username&quot;,</span>
+<span class="nc" id="L328">          username, &quot;route&quot;, route, &quot;patients&quot;, DisplayPatients.buildHTML(username));</span>
+<span class="nc" id="L329">      return new ModelAndView(map, &quot;base2.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Handle requests to the base page of our platform, where a doctor can see al
+   * infromation about patients and register new patients.
+   *
+   */
+  private static class ErrorHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L341">      Map&lt;String, String&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;);</span>
+<span class="nc" id="L342">      return new ModelAndView(map, &quot;error.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Handles requests to the register patient page.
+   */
+  private static class RegisterPatientHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L352">      String username = req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L353">      Map&lt;String, String&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;username&quot;, username);</span>
+<span class="nc" id="L354">      return new ModelAndView(map, &quot;registerPatient.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Handles requests to actually register a patient into our database.
+   */
+  private static class AddPatientHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L364">      QueryParamsMap qm = req.queryMap();</span>
+<span class="nc" id="L365">      List&lt;String&gt; forRegister = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L366">      forRegister.add(qm.value(&quot;first_name&quot;));</span>
+<span class="nc" id="L367">      forRegister.add(qm.value(&quot;middle_name&quot;));</span>
+<span class="nc" id="L368">      forRegister.add(qm.value(&quot;last_name&quot;));</span>
+<span class="nc" id="L369">      forRegister.add(qm.value(&quot;dob&quot;));</span>
+<span class="nc" id="L370">      forRegister.add(qm.value(&quot;email&quot;));</span>
+<span class="nc" id="L371">      forRegister.add(qm.value(&quot;phone&quot;));</span>
+<span class="nc" id="L372">      forRegister.add(qm.value(&quot;emergency contact phone&quot;));</span>
+<span class="nc" id="L373">      forRegister.add(req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;));</span>
+<span class="nc" id="L374">      RegisterData register = new PatientRegistration();</span>
+<span class="nc" id="L375">      register.register(forRegister);</span>
+<span class="nc" id="L376">      error = &quot;&quot;;</span>
+<span class="nc" id="L377">      res.redirect(&quot;/apollo/:&quot; + req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;));</span>
+<span class="nc" id="L378">      return null;</span>
+    }
+  }
+
+  /**
+   * Handles requests to the visiits page for an individual patient, where all
+   * patient visits are displayed.
+   */
+  private static class VisitHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L389">      QueryParamsMap qmap = req.queryMap();</span>
+<span class="nc" id="L390">      String username = req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L391">      String patient = req.params(&quot;:patient&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L392">      String route = &quot;/apollo/:&quot; + username + &quot;/:&quot; + patient + &quot;/registerVisit&quot;;</span>
+<span class="nc" id="L393">      String route2 = &quot;/apollo/patientBase/:&quot; + username + &quot;/:&quot; + patient;</span>
+<span class="nc" id="L394">      PatientDatum patientData = Database.getPatient(patient);</span>
+<span class="nc" id="L395">      String visits = DisplayVisits.buildHTML(username, patient);</span>
+<span class="nc" id="L396">      Map&lt;String, String&gt; map = new HashMap&lt;String, String&gt;();</span>
+<span class="nc" id="L397">      map.put(&quot;title&quot;, &quot;Apollo&quot;);</span>
+<span class="nc" id="L398">      map.put(&quot;username&quot;, username);</span>
+<span class="nc" id="L399">      String firstName = patientData.getFirstName();</span>
+<span class="nc" id="L400">      String middleName = patientData.getMiddleName();</span>
+<span class="nc" id="L401">      String lastName = patientData.getLastName();</span>
+<span class="nc" id="L402">      StringBuilder name = new StringBuilder();</span>
+<span class="nc" id="L403">      name.append(firstName);</span>
+<span class="nc" id="L404">      name.append(&quot; &quot;);</span>
+<span class="nc" id="L405">      name.append(middleName);</span>
+<span class="nc" id="L406">      name.append(&quot; &quot;);</span>
+<span class="nc" id="L407">      name.append(lastName);</span>
+<span class="nc" id="L408">      map.put(&quot;name&quot;, name.toString());</span>
+<span class="nc" id="L409">      map.put(&quot;route&quot;, route);</span>
+<span class="nc" id="L410">      map.put(&quot;visits&quot;, visits);</span>
+<span class="nc" id="L411">      map.put(&quot;route2&quot;, route2);</span>
+<span class="nc" id="L412">      map.put(&quot;patient&quot;, patient);</span>
+      try {
+<span class="nc" id="L414">        String searched = req.queryParams(&quot;searched&quot;);</span>
+<span class="nc" id="L415">        String startDate = req.queryParams(&quot;startDate&quot;);</span>
+<span class="nc" id="L416">        String endDate = req.queryParams(&quot;endDate&quot;);</span>
+<span class="nc" id="L417">        System.out.println(&quot;Searched: &quot; + searched);</span>
+<span class="nc" id="L418">        System.out.println(&quot;Start: &quot; + startDate);</span>
+<span class="nc" id="L419">        System.out.println(&quot;End: &quot; + endDate);</span>
+<span class="nc bnc" id="L420" title="All 4 branches missed.">        if (searched != null &amp;&amp; searched != &quot;&quot;) {</span>
+<span class="nc" id="L421">          SearchAllTranscripts searcher = new SearchAllTranscripts();</span>
+<span class="nc" id="L422">          ArrayList&lt;String&gt; input = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L423">          input.add(&quot;searchAll&quot;);</span>
+<span class="nc" id="L424">          input.add(patient);</span>
+<span class="nc" id="L425">          input.add(searched);</span>
+<span class="nc" id="L426">          searcher.executeCommand(input);</span>
+<span class="nc" id="L427">          Set&lt;String&gt; ids = new HashSet&lt;String&gt;();</span>
+<span class="nc bnc" id="L428" title="All 4 branches missed.">          if (searcher.getAllResults() != null &amp;&amp; !searcher.getAllResults().isEmpty()) {</span>
+<span class="nc" id="L429">            ids = searcher.getDates(searcher.getAllResults());</span>
+          }
+<span class="nc" id="L431">          String visitsSearched = DisplayVisits.buildHTMLid(username, patient, ids);</span>
+<span class="nc" id="L432">          map.put(&quot;visits&quot;, visitsSearched);</span>
+<span class="nc bnc" id="L433" title="All 4 branches missed.">        } else if (startDate != null &amp;&amp; endDate != null) {</span>
+<span class="nc" id="L434">          startDate = dateProcessor(startDate);</span>
+<span class="nc" id="L435">          System.out.println(&quot;START&quot; + startDate);</span>
+<span class="nc" id="L436">          endDate = dateProcessor(endDate);</span>
+<span class="nc" id="L437">          List&lt;String&gt; dateRanges = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L438">          dateRanges.add(startDate);</span>
+<span class="nc" id="L439">          dateRanges.add(endDate);</span>
+<span class="nc" id="L440">          String visitsDate = DisplayVisits.buildHTMLDateRanges(username, patient, dateRanges);</span>
+<span class="nc" id="L441">          System.out.println(visitsDate);</span>
+<span class="nc" id="L442">          map.put(&quot;visits&quot;, visitsDate);</span>
+        }
+<span class="nc" id="L444">      } catch (Exception e) {</span>
+<span class="nc" id="L445">        System.out.println(&quot;Nothing in search bar or no date range given&quot;);</span>
+      }
+<span class="nc" id="L447">      return new ModelAndView(map, &quot;visits.ftl&quot;);</span>
+    }
+
+    /**
+     * This is a parser that is used to convert dates from the JavaScript format
+     * into the format that we use when registering a visit. This is needed for us
+     * to properly search for visits between date ranges.
+     *
+     * @param date A String, representing a date to convert into our database's
+     *             format.
+     * @return A String, the same date into tehhe correct format: &quot;day-month-year&quot;.
+     */
+    private String dateProcessor(String date) {
+<span class="nc" id="L460">      String[] dateArray = new String[3];</span>
+<span class="nc" id="L461">      String[] splitDate = date.split(&quot;\\s+&quot;);</span>
+<span class="nc" id="L462">      dateArray[0] = splitDate[1]; // month</span>
+<span class="nc" id="L463">      dateArray[1] = splitDate[2]; // day</span>
+<span class="nc" id="L464">      dateArray[2] = splitDate[3]; // year</span>
+<span class="nc" id="L465">      Map&lt;String, String&gt; months = new HashMap&lt;String, String&gt;();</span>
+<span class="nc" id="L466">      months.put(&quot;Jan&quot;, &quot;01&quot;);</span>
+<span class="nc" id="L467">      months.put(&quot;Feb&quot;, &quot;02&quot;);</span>
+<span class="nc" id="L468">      months.put(&quot;Mar&quot;, &quot;03&quot;);</span>
+<span class="nc" id="L469">      months.put(&quot;Apr&quot;, &quot;04&quot;);</span>
+<span class="nc" id="L470">      months.put(&quot;May&quot;, &quot;05&quot;);</span>
+<span class="nc" id="L471">      months.put(&quot;Jun&quot;, &quot;06&quot;);</span>
+<span class="nc" id="L472">      months.put(&quot;Jul&quot;, &quot;07&quot;);</span>
+<span class="nc" id="L473">      months.put(&quot;Aug&quot;, &quot;08&quot;);</span>
+<span class="nc" id="L474">      months.put(&quot;Sep&quot;, &quot;09&quot;);</span>
+<span class="nc" id="L475">      months.put(&quot;Oct&quot;, &quot;10&quot;);</span>
+<span class="nc" id="L476">      months.put(&quot;Nov&quot;, &quot;11&quot;);</span>
+<span class="nc" id="L477">      months.put(&quot;Dec&quot;, &quot;12&quot;);</span>
+<span class="nc" id="L478">      String numericMonth = months.get(dateArray[0]);</span>
+<span class="nc" id="L479">      dateArray[0] = numericMonth;</span>
+<span class="nc" id="L480">      StringBuilder toRet = new StringBuilder();</span>
+<span class="nc" id="L481">      toRet.append(dateArray[2]);</span>
+<span class="nc" id="L482">      toRet.append(&quot;-&quot;);</span>
+<span class="nc" id="L483">      toRet.append(dateArray[0]);</span>
+<span class="nc" id="L484">      toRet.append(&quot;-&quot;);</span>
+<span class="nc" id="L485">      toRet.append(dateArray[1]);</span>
+<span class="nc" id="L486">      return toRet.toString();</span>
+    }
+  }
+
+  /**
+   * Handles requests to view a doctor's account details page.
+   */
+  private static class AccountDetailsHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L496">      String username = req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L497">      String route = &quot;/apollo/registerPatient/:&quot; + username;</span>
+<span class="nc" id="L498">      String docName = Database.getDocName(username);</span>
+<span class="nc" id="L499">      Map&lt;String, String&gt; details = Database.getDoctorInfo(username);</span>
+<span class="nc" id="L500">      Map&lt;String, Object&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;route&quot;, route, &quot;docName&quot;,</span>
+<span class="nc" id="L501">          docName, &quot;details&quot;, details, &quot;username&quot;, username);</span>
+<span class="nc" id="L502">      return new ModelAndView(map, &quot;accountDetails.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Handles requests to register a new visit.
+   *
+   */
+  private static class NewVisitHandler implements TemplateViewRoute {
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L513">      String username = req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L514">      String patient = req.params(&quot;:patient&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L515">      String route = &quot;/apollo/:&quot; + username + &quot;/:&quot; + patient + &quot;/registerVisit&quot;;</span>
+<span class="nc" id="L516">      PatientDatum patientData = Database.getPatient(patient);</span>
+<span class="nc" id="L517">      Map&lt;String, String&gt; map = ImmutableMap.of(&quot;title&quot;, &quot;Apollo&quot;, &quot;username&quot;, username, &quot;name&quot;,</span>
+<span class="nc" id="L518">          patientData.getFirstName(), &quot;route&quot;, route);</span>
+<span class="nc" id="L519">      return new ModelAndView(map, &quot;registerVisit.ftl&quot;);</span>
+    }
+  }
+
+  /**
+   * Handles requests to view the page for a single visit. This includes
+   * displaying the visit transcript, as well as the visit summary, visit
+   * recording, and patient details.
+   *
+   */
+  private static class SingleVisitHandler implements TemplateViewRoute {
+
+    static final int BYTES = 32; // for audio
+
+    @Override
+    public ModelAndView handle(Request req, Response res) {
+<span class="nc" id="L535">      String username = req.params(&quot;:username&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L536">      String patient = req.params(&quot;:patient&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L537">      String date = req.params(&quot;:date&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L538">      String id = req.params(&quot;:id&quot;).replaceAll(&quot;:&quot;, &quot;&quot;);</span>
+<span class="nc" id="L539">      String audio = Database.getAudio(username, patient, id);</span>
+<span class="nc" id="L540">      String route = &quot;/apollo/patientBase/:&quot; + username + &quot;/:&quot; + patient;</span>
+<span class="nc" id="L541">      String transcript = Database.getTranscript(username, patient, id);</span>
+<span class="nc" id="L542">      String summary = Database.getSummary(username, patient, id);</span>
+<span class="nc" id="L543">      PatientDatum patientData = Database.getPatient(patient);</span>
+<span class="nc" id="L544">      String firstName = patientData.getFirstName();</span>
+<span class="nc" id="L545">      String middleName = patientData.getMiddleName();</span>
+<span class="nc" id="L546">      String lastName = patientData.getLastName();</span>
+<span class="nc" id="L547">      StringBuilder name = new StringBuilder();</span>
+<span class="nc" id="L548">      String dob = patientData.getDateOfBirth();</span>
+<span class="nc" id="L549">      String number = patientData.getPhoneNumber();</span>
+<span class="nc" id="L550">      String email = patientData.getEmail();</span>
+<span class="nc" id="L551">      name.append(firstName);</span>
+<span class="nc" id="L552">      name.append(&quot; &quot;);</span>
+<span class="nc" id="L553">      name.append(middleName);</span>
+<span class="nc" id="L554">      name.append(&quot; &quot;);</span>
+<span class="nc" id="L555">      name.append(lastName);</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">      if (summary == null) {</span>
+<span class="nc" id="L557">        summary = &quot;We could not find any symptoms or reasons for visit in the transcript. &quot;</span>
+            + &quot;Please use the manual commands.&quot;;
+      }
+<span class="nc" id="L560">      Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();</span>
+<span class="nc" id="L561">      map.put(&quot;title&quot;, &quot;Apollo&quot;);</span>
+<span class="nc" id="L562">      map.put(&quot;username&quot;, username);</span>
+<span class="nc" id="L563">      map.put(&quot;patient&quot;, patient);</span>
+<span class="nc" id="L564">      map.put(&quot;date&quot;, date);</span>
+<span class="nc" id="L565">      map.put(&quot;route&quot;, route);</span>
+<span class="nc" id="L566">      map.put(&quot;transcript&quot;, transcript);</span>
+<span class="nc" id="L567">      map.put(&quot;summary&quot;, summary);</span>
+<span class="nc" id="L568">      map.put(&quot;audio&quot;, audio.substring(BYTES));</span>
+<span class="nc" id="L569">      map.put(&quot;name&quot;, name);</span>
+<span class="nc" id="L570">      map.put(&quot;dob&quot;, dob);</span>
+<span class="nc" id="L571">      map.put(&quot;number&quot;, number);</span>
+<span class="nc" id="L572">      map.put(&quot;email&quot;, email);</span>
+<span class="nc" id="L573">      return new ModelAndView(map, &quot;single_visit.ftl&quot;);</span>
+    }
+  }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

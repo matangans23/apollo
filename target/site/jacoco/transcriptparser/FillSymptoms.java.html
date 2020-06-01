@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FillSymptoms.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">transcriptparser</a> &gt; <span class="el_source">FillSymptoms.java</span></div><h1>FillSymptoms.java</h1><pre class="source lang-java linenums">package transcriptparser;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import searchalgorithms.KMP;
+import searchalgorithms.Search;
+
+/**
+ * This class is used to find the symptoms reported by a patient during a
+ * specific visit.
+ */
+public class FillSymptoms {
+  private Map&lt;String, List&lt;String&gt;&gt; symptomPatterns;
+  private String transcript;
+  private Search kmp;
+
+  /**
+   * Constructor for the FillSymptoms class.
+   *
+   * @param patterns       A Map from String to a List of Strings, representing
+   *                       the mapping between symptoms and their categorical
+   *                       labeling.
+   * @param fullTranscript A String, representing the full visit transcript.
+   */
+<span class="fc" id="L28">  public FillSymptoms(Map&lt;String, List&lt;String&gt;&gt; patterns, String fullTranscript) {</span>
+<span class="fc" id="L29">    symptomPatterns = patterns;</span>
+<span class="fc" id="L30">    transcript = fullTranscript;</span>
+<span class="fc" id="L31">    kmp = this.getPortion();</span>
+<span class="fc" id="L32">  }</span>
+
+  /**
+   * This method gets the portion of the transcript in which to find symptoms.
+   *
+   * @return A KMP object with the correctly searched portion.
+   */
+  public Search getPortion() {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">    if (transcript == null) {</span>
+<span class="nc" id="L41">      System.out.println(&quot;ERROR: File not found&quot;);</span>
+<span class="nc" id="L42">      return null;</span>
+    }
+<span class="fc" id="L44">    KMP full = new KMP(transcript.toCharArray());</span>
+    try {
+<span class="fc" id="L46">      Integer startIndex = -1; // get start phrase</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">      for (String phrase : AcceptablePhrases.getSymptomsStartPhrases()) {</span>
+<span class="fc" id="L48">        List&lt;Integer&gt; indices = full.search(phrase.toCharArray());</span>
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">        if (indices != null &amp;&amp; !indices.isEmpty()) {</span>
+<span class="fc" id="L50">          startIndex = indices.get(0);</span>
+<span class="fc" id="L51">          break;</span>
+        }
+<span class="fc" id="L53">      }</span>
+<span class="fc" id="L54">      Integer endIndex = -1; // get end phrase</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">      for (String phrase : AcceptablePhrases.getSymptomsEndPhrases()) {</span>
+<span class="fc" id="L56">        List&lt;Integer&gt; indices = full.search(phrase.toCharArray());</span>
+<span class="pc bpc" id="L57" title="1 of 4 branches missed.">        if (indices != null &amp;&amp; !indices.isEmpty()) {</span>
+<span class="fc" id="L58">          endIndex = indices.get(0);</span>
+<span class="fc" id="L59">          break;</span>
+        }
+<span class="fc" id="L61">      }</span>
+<span class="fc" id="L62">      String portion = transcript.substring(startIndex, endIndex);</span>
+<span class="fc" id="L63">      return new KMP(portion.toCharArray()); // kmp to only search through</span>
+                                             // symptoms portion of
+                                             // transcript
+<span class="fc" id="L66">    } catch (Exception e) {</span>
+<span class="fc" id="L67">      System.out</span>
+<span class="fc" id="L68">          .println(&quot;ERROR: nothing found in transcript. Please use the given manual sentences&quot;);</span>
+<span class="fc" id="L69">      return new KMP(&quot;&quot;.toCharArray());</span>
+    }
+
+  }
+
+  /**
+   * This method gets all the symptoms from the correct portion of the transcript.
+   *
+   * @return A Map from String to a List of Strings, that represents the found
+   *         symspomts and their categorical labelings.
+   */
+  public Map&lt;String, List&lt;String&gt;&gt; getSymptoms() {
+<span class="fc" id="L81">    Map&lt;String, List&lt;String&gt;&gt; foundSymptoms = new HashMap&lt;String, List&lt;String&gt;&gt;();</span>
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">    if (symptomPatterns.isEmpty() || symptomPatterns == null) {</span>
+<span class="fc" id="L83">      return null;</span>
+    }
+<span class="fc bfc" id="L85" title="All 2 branches covered.">    for (String key : symptomPatterns.keySet()) {</span>
+<span class="fc" id="L86">      List&lt;String&gt; found = new ArrayList&lt;String&gt;();</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">      for (String pattern : symptomPatterns.get(key)) {</span>
+<span class="fc" id="L88">        List&lt;Integer&gt; foundIndices = kmp.search(pattern.toCharArray());</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (foundIndices.size() != 0) {</span>
+<span class="fc" id="L90">          found.add(pattern);</span>
+        }
+<span class="fc" id="L92">      }</span>
+<span class="fc" id="L93">      foundSymptoms.put(key, found);</span>
+<span class="fc" id="L94">    }</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">    if (foundSymptoms.isEmpty()) {</span>
+<span class="nc" id="L96">      List&lt;String&gt; found = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L97">      found.add(&quot;&quot;);</span>
+<span class="nc" id="L98">      foundSymptoms.put(&quot;none&quot;, found);</span>
+    }
+<span class="fc" id="L100">    return foundSymptoms;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

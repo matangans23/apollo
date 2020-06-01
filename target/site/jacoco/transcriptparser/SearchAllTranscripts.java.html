@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchAllTranscripts.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">transcriptparser</a> &gt; <span class="el_source">SearchAllTranscripts.java</span></div><h1>SearchAllTranscripts.java</h1><pre class="source lang-java linenums">package transcriptparser;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import databases.Database;
+import repl.Executable;
+import searchalgorithms.KMP;
+import searchalgorithms.Search;
+
+/**
+ * This class executes the search by keyword on all transcripts from all visits
+ * belonging to a doctor for a certain patient.
+ *
+ */
+public class SearchAllTranscripts implements Executable {
+  private Map&lt;String, String&gt; transcripts;
+  private String pattern;
+
+  /**
+   * Empty constructor.
+   */
+<span class="fc" id="L27">  public SearchAllTranscripts() {</span>
+<span class="fc" id="L28">    transcripts = new HashMap&lt;String, String&gt;();</span>
+<span class="fc" id="L29">    pattern = &quot;&quot;;</span>
+<span class="fc" id="L30">  }</span>
+
+  /**
+   * This is the constructor which uses transcripts and a pattern.
+   *
+   * @param transcripts A Map from String to String, representing treanscripts for
+   *                    a corresponding visit.
+   * @param pattern     A String, representing the pattern we are looking for.
+   */
+<span class="fc" id="L39">  public SearchAllTranscripts(Map&lt;String, String&gt; transcripts, String pattern) {</span>
+<span class="fc" id="L40">    this.transcripts = transcripts;</span>
+<span class="fc" id="L41">    this.pattern = pattern;</span>
+<span class="fc" id="L42">  }</span>
+
+  /**
+   * This is the constructor which uses a patient UUID and a pattern.
+   *
+   * @param patient A String, representing a patient's UUID.
+   * @param pattern A String, representing the pattern we are looking for.
+   */
+<span class="fc" id="L50">  public SearchAllTranscripts(UUID patient, String pattern) {</span>
+<span class="fc" id="L51">    this.transcripts = Database.getAllTranscripts(patient.toString());</span>
+<span class="fc" id="L52">    this.pattern = pattern;</span>
+<span class="fc" id="L53">  }</span>
+
+  /**
+   * This method finds the pattern in the transcript.
+   *
+   * @param transcript A String, representing the full visit transcript.
+   * @return A List of Integers, representing indexes where the pattern was found.
+   */
+  public List&lt;Integer&gt; findPattern(String transcript) {
+<span class="fc" id="L62">    List&lt;Integer&gt; found = new ArrayList&lt;Integer&gt;();</span>
+<span class="fc" id="L63">    Search current = new KMP(transcript.toCharArray());</span>
+<span class="fc" id="L64">    found = current.search(pattern.toCharArray());</span>
+<span class="fc" id="L65">    return found;</span>
+  }
+
+  /**
+   * This methos finds results from searched patter.
+   *
+   * @return A Map from String to a List of Strings, represeting which visits we
+   *         found the pattern in.
+   */
+  public Map&lt;String, List&lt;Integer&gt;&gt; getAllResults() {
+<span class="fc" id="L75">    Map&lt;String, List&lt;Integer&gt;&gt; allResults = new HashMap&lt;String, List&lt;Integer&gt;&gt;();</span>
+<span class="pc bpc" id="L76" title="1 of 4 branches missed.">    if (transcripts == null || transcripts.isEmpty()) {</span>
+<span class="fc" id="L77">      return allResults;</span>
+    }
+<span class="fc bfc" id="L79" title="All 2 branches covered.">    for (String date : transcripts.keySet()) {</span>
+<span class="fc" id="L80">      String transcript = transcripts.get(date);</span>
+<span class="fc" id="L81">      List&lt;Integer&gt; results = this.findPattern(transcript);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">      if (!results.isEmpty()) {</span>
+<span class="fc" id="L83">        allResults.put(date, this.findPattern(transcript));</span>
+      }
+    }
+<span class="fc" id="L86">    return allResults;</span>
+  }
+
+  /**
+   * This method prints the found indeces.
+   *
+   * @param searchResults A Map from String to a List of Integers, representing
+   *                      the search results.
+   * @return A String, representing the found indices in the correct format.
+   */
+  public String printFound(Map&lt;String, List&lt;Integer&gt;&gt; searchResults) {
+    try {
+<span class="fc" id="L98">      StringBuilder toReturn = new StringBuilder();</span>
+<span class="fc" id="L99">      toReturn.append(&quot;Search Results: \n\n&quot;);</span>
+<span class="pc bpc" id="L100" title="2 of 4 branches missed.">      if (!searchResults.isEmpty() &amp;&amp; !(searchResults == null)) {</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for (String date : searchResults.keySet()) {</span>
+<span class="fc" id="L102">          toReturn.append(&quot;\nID: &quot; + date + &quot;\nIndices: &quot;);</span>
+<span class="fc" id="L103">          List&lt;Integer&gt; indices = searchResults.get(date);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">          for (Integer index : indices) {</span>
+<span class="fc" id="L105">            toReturn.append(index + &quot;, &quot;);</span>
+          }
+        }
+<span class="fc" id="L108">      } else {</span>
+<span class="nc" id="L109">        toReturn.append(&quot;No results found&quot;);</span>
+      }
+<span class="fc" id="L111">      return toReturn.toString();</span>
+<span class="nc" id="L112">    } catch (Exception e) {</span>
+<span class="nc" id="L113">      return null;</span>
+    }
+
+  }
+
+  /**
+   * This isi the execute command method needed to run the command in the REPL,
+   * used for testing.
+   */
+  @Override
+  public void executeCommand(List&lt;String&gt; input) {
+    // TODO Auto-generated method stub
+<span class="nc bnc" id="L125" title="All 2 branches missed.">    if (Database.getConn() == null) {</span>
+<span class="nc" id="L126">      System.err.println(&quot;No connection found&quot;);</span>
+<span class="nc" id="L127">      return;</span>
+    }
+<span class="nc bnc" id="L129" title="All 2 branches missed.">    if (input.size() != 3) {</span>
+<span class="nc" id="L130">      System.err.println(&quot;Incorrect Input&quot;);</span>
+<span class="nc" id="L131">      return;</span>
+    }
+<span class="nc bnc" id="L133" title="All 2 branches missed.">    if (input.get(1) == null) {</span>
+<span class="nc" id="L134">      System.err.println(&quot;No patient found&quot;);</span>
+<span class="nc" id="L135">      return;</span>
+    }
+<span class="nc bnc" id="L137" title="All 2 branches missed.">    if (input.get(2) == null) {</span>
+<span class="nc" id="L138">      System.err.println(&quot;No pattern found&quot;);</span>
+<span class="nc" id="L139">      return;</span>
+    }
+<span class="nc" id="L141">    String patient = input.get(1);</span>
+<span class="nc" id="L142">    this.transcripts = Database.getAllTranscripts(patient);</span>
+<span class="nc" id="L143">    this.pattern = input.get(2);</span>
+<span class="nc" id="L144">    this.getAllResults();</span>
+<span class="nc" id="L145">  }</span>
+
+  /**
+   * This method gets the dates for the relevant dates to display on the GUI.
+   *
+   * @param searchResults A Map from String to a List of Integers, representing
+   *                      the search results.
+   * @return A Set of Strings, representing the search reults.
+   */
+  public Set&lt;String&gt; getDates(Map&lt;String, List&lt;Integer&gt;&gt; searchResults) {
+<span class="nc" id="L155">    return searchResults.keySet();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

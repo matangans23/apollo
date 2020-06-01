@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Database.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">databases</a> &gt; <span class="el_source">Database.java</span></div><h1>Database.java</h1><pre class="source lang-java linenums">package databases;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import patient.PatientDatum;
+import patient.VisitDatum;
+import registrationandlogin.Encryption;
+
+/**
+ * This is my database class, where I read from a database and make the instance
+ * of a connection. I have a getter method to get the connection to the
+ * database.
+ */
+public final class Database {
+
+  private static Connection conn;
+  static final int COL7 = 7;
+  static final int COL8 = 8;
+  static final int COL9 = 9;
+
+  /**
+   * Empty necessary constructor for private initialization.
+   */
+  private Database() {
+  }
+
+  /**
+   * Instantiates the database, creating tables if necessary. Automatically loads
+   * files.
+   *
+   * @return int , 1 for correct, 0 for errors.
+   */
+  public static int makeDatabase() {
+    // Initializes the database connection, turns foreign keys on.
+<span class="fc" id="L48">    String filename = &quot;data/db/apollo.sqlite3&quot;;</span>
+    try {
+<span class="fc" id="L50">      FileReader file = new FileReader(filename);</span>
+<span class="pc" id="L51">    } catch (FileNotFoundException e1) {</span>
+<span class="nc" id="L52">      System.err.println(&quot;ERROR: File does not exist&quot;);</span>
+<span class="nc" id="L53">      return 0;</span>
+    }
+    try {
+<span class="fc" id="L56">      Class.forName(&quot;org.sqlite.JDBC&quot;);</span>
+<span class="pc" id="L57">    } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L58">      System.err.println(&quot;ERROR: Database&quot;);</span>
+<span class="nc" id="L59">      return 0;</span>
+    }
+<span class="fc" id="L61">    String urlToDB = &quot;jdbc:sqlite:&quot; + filename;</span>
+    try {
+<span class="fc" id="L63">      conn = DriverManager.getConnection(urlToDB);</span>
+<span class="pc" id="L64">    } catch (SQLException e) {</span>
+<span class="nc" id="L65">      System.err.println(&quot;ERROR: Database&quot;);</span>
+<span class="nc" id="L66">      return 0;</span>
+    }
+    // these two lines tell the database to enforce foreign keys during
+    // operations,
+    // and should be present
+    Statement stat;
+    try {
+<span class="fc" id="L73">      stat = conn.createStatement();</span>
+<span class="fc" id="L74">      stat.executeUpdate(&quot;PRAGMA foreign_keys=ON;&quot;);</span>
+<span class="pc" id="L75">    } catch (SQLException e) {</span>
+<span class="nc" id="L76">      System.err.println(&quot;ERROR: Database&quot;);</span>
+<span class="nc" id="L77">      return 0;</span>
+    }
+<span class="fc" id="L79">    return 1;</span>
+  }
+
+  /**
+   * Method that gets the connection to a database.
+   *
+   * @return connection to a database
+   */
+  public static Connection getConn() {
+<span class="fc" id="L88">    return conn;</span>
+  }
+
+  /**
+   * Get doctor's last name.
+   *
+   * @param username of doctor
+   * @return last name corresponding to username
+   */
+  public static String getDocName(String username) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L100">      prep = conn.prepareStatement(&quot;SELECT last_name FROM doctor WHERE username = ?&quot;);</span>
+<span class="fc" id="L101">      prep.setString(1, username);</span>
+<span class="fc" id="L102">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L103">      String toRet = &quot;&quot;;</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L105">        toRet = rs.getString(1);</span>
+      }
+<span class="fc" id="L107">      rs.close();</span>
+<span class="fc" id="L108">      return toRet;</span>
+<span class="nc" id="L109">    } catch (Exception e) {</span>
+<span class="nc" id="L110">      System.err.println(&quot;ERROR: couldn't find doctor name&quot;);</span>
+<span class="nc" id="L111">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that checks if a username is valid or not.
+   * Validity in this case means weather or not a username has already been taken
+   * or not.
+   *
+   * @param username A potiential new doctor username.
+   * @return A boolean, false if the username is free, true otherwise.
+   */
+  public static boolean ifUsernameExists(String username) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L126">      prep = conn.prepareStatement(&quot;SELECT username FROM doctor WHERE username = ?&quot;);</span>
+<span class="fc" id="L127">      prep.setString(1, username);</span>
+<span class="fc" id="L128">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L130">        rs.getString(1);</span>
+<span class="fc" id="L131">        rs.close();</span>
+<span class="fc" id="L132">        return true;</span>
+      }
+<span class="fc" id="L134">      rs.close();</span>
+<span class="fc" id="L135">      return false;</span>
+<span class="nc" id="L136">    } catch (Exception e) {</span>
+<span class="nc" id="L137">      System.err.println(&quot;ERROR: couldn't validate username&quot;);</span>
+<span class="nc" id="L138">      return false;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that find all the patients given a doctor's
+   * username.
+   *
+   * @param username A String, representing a doctor's username.
+   * @return A List of PatientDatums, representing all patients for a given
+   *         doctor.
+   */
+  public static List&lt;PatientDatum&gt; getDoctorPatients(String username) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L153">      List&lt;PatientDatum&gt; toRet = new ArrayList&lt;PatientDatum&gt;();</span>
+<span class="fc" id="L154">      prep = conn.prepareStatement(&quot;SELECT * FROM patient WHERE primary_doctor = ?&quot;);</span>
+<span class="fc" id="L155">      prep.setString(1, username);</span>
+<span class="fc" id="L156">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L157">      List&lt;String&gt; patientInfo = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L158">      patientInfo.add(rs.getString(&quot;id&quot;)); // id</span>
+<span class="fc" id="L159">      patientInfo.add(rs.getString(2)); // firstname</span>
+<span class="fc" id="L160">      patientInfo.add(rs.getString(3)); // midname</span>
+<span class="fc" id="L161">      patientInfo.add(rs.getString(4)); // lastname</span>
+<span class="fc" id="L162">      patientInfo.add(rs.getString(5)); // dob</span>
+<span class="fc" id="L163">      patientInfo.add(rs.getString(6)); // phone</span>
+<span class="fc" id="L164">      patientInfo.add(rs.getString(COL7)); // email</span>
+<span class="fc" id="L165">      patientInfo.add(rs.getString(COL8)); // emergency number</span>
+<span class="fc" id="L166">      patientInfo.add(rs.getString(COL9)); // docusername</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L168">        PatientDatum curr = new PatientDatum(patientInfo);</span>
+<span class="fc" id="L169">        toRet.add(curr);</span>
+      }
+<span class="fc" id="L171">      rs.close();</span>
+<span class="fc" id="L172">      return toRet;</span>
+<span class="nc" id="L173">    } catch (Exception e) {</span>
+<span class="nc" id="L174">      System.err.println(&quot;ERROR: no patients found&quot;);</span>
+<span class="nc" id="L175">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that retrieves a doctor's accoutn details.
+   *
+   * @param username A String, representing a doctor username.
+   * @return A Map from Striing to String, where the key is the field of doctor
+   *         information and the value is the detail.
+   */
+  public static Map&lt;String, String&gt; getDoctorInfo(String username) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L189">      Map&lt;String, String&gt; toRet = new LinkedHashMap&lt;String, String&gt;();</span>
+<span class="fc" id="L190">      prep = conn.prepareStatement(&quot;SELECT * FROM doctor WHERE username = ?&quot;);</span>
+<span class="fc" id="L191">      prep.setString(1, username);</span>
+<span class="fc" id="L192">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L194">        toRet.put(&quot;first name:&quot;, rs.getString(2)); // first name</span>
+<span class="fc" id="L195">        toRet.put(&quot;middle name:&quot;, rs.getString(3)); // middle name</span>
+<span class="fc" id="L196">        toRet.put(&quot;last name:&quot;, rs.getString(4)); // last name</span>
+<span class="fc" id="L197">        toRet.put(&quot;email:&quot;, rs.getString(5)); // email</span>
+<span class="fc" id="L198">        toRet.put(&quot;username:&quot;, rs.getString(6)); // username</span>
+<span class="fc" id="L199">        toRet.put(&quot;medical institution:&quot;, rs.getString(COL9)); // medical</span>
+        // institution
+      }
+<span class="fc" id="L202">      rs.close();</span>
+<span class="fc" id="L203">      return toRet;</span>
+<span class="nc" id="L204">    } catch (Exception e) {</span>
+<span class="nc" id="L205">      System.err.println(&quot;ERROR: doctor not found&quot;);</span>
+<span class="nc" id="L206">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that retrieves a patient's information given a
+   * patients unique ID.
+   *
+   * @param id A String, representing a patient's unique ID.
+   * @return A patientDatum, representing the patientDatum's.
+   */
+  public static PatientDatum getPatient(String id) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L220">      prep = conn.prepareStatement(&quot;SELECT * FROM patient WHERE id = ?&quot;);</span>
+<span class="fc" id="L221">      prep.setString(1, id);</span>
+<span class="fc" id="L222">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L223">      List&lt;String&gt; patientInfo = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L224">      patientInfo.add(rs.getString(1)); // id</span>
+<span class="fc" id="L225">      patientInfo.add(rs.getString(2)); // firstname</span>
+<span class="fc" id="L226">      patientInfo.add(rs.getString(3)); // midname</span>
+<span class="fc" id="L227">      patientInfo.add(rs.getString(4)); // lastname</span>
+<span class="fc" id="L228">      patientInfo.add(rs.getString(5)); // dob</span>
+<span class="fc" id="L229">      patientInfo.add(rs.getString(6)); // phone</span>
+<span class="fc" id="L230">      patientInfo.add(rs.getString(COL7)); // email</span>
+<span class="fc" id="L231">      patientInfo.add(rs.getString(COL8)); // emergency number</span>
+<span class="fc" id="L232">      patientInfo.add(rs.getString(COL9)); // docusername</span>
+<span class="fc" id="L233">      PatientDatum patient = new PatientDatum(patientInfo);</span>
+<span class="fc" id="L234">      rs.close();</span>
+<span class="fc" id="L235">      return patient;</span>
+<span class="nc" id="L236">    } catch (SQLException e) {</span>
+<span class="nc" id="L237">      System.err.println(&quot;ERROR: Patient not found&quot;);</span>
+<span class="nc" id="L238">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that finds all visits given a doctor's
+   * username and a patientId.
+   *
+   * @param docUsername A String, representing the doctor's username.
+   * @param patientID   A String, representing a patient's ID.
+   * @return A list of visitDatums, representing all visits between the given
+   *         doctor and patient.
+   */
+  public static List&lt;VisitDatum&gt; getVisits(String docUsername, String patientID) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L254">      prep = conn.prepareStatement(</span>
+<span class="fc" id="L255">          &quot;SELECT * FROM appointments WHERE doctor_username = ? AND patient_id = ?&quot;);</span>
+<span class="fc" id="L256">      prep.setString(1, docUsername);</span>
+<span class="fc" id="L257">      prep.setString(2, patientID);</span>
+<span class="fc" id="L258">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L259">      List&lt;VisitDatum&gt; toRet = new ArrayList&lt;VisitDatum&gt;();</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L261">        List&lt;String&gt; details = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L262">        details.add(rs.getString(1));</span>
+<span class="fc" id="L263">        details.add(rs.getString(2));</span>
+<span class="fc" id="L264">        details.add(rs.getString(3));</span>
+<span class="fc" id="L265">        details.add(rs.getString(4));</span>
+<span class="fc" id="L266">        VisitDatum curr = new VisitDatum(details, rs.getBytes(COL7), rs.getBytes(6),</span>
+<span class="fc" id="L267">            rs.getString(5), rs.getBytes(COL9));</span>
+<span class="fc" id="L268">        toRet.add(curr);</span>
+      }
+<span class="fc" id="L270">      rs.close();</span>
+<span class="fc" id="L271">      return toRet;</span>
+<span class="nc" id="L272">    } catch (SQLException e) {</span>
+<span class="nc" id="L273">      System.err.println(&quot;ERROR: No visits found&quot;);</span>
+<span class="nc" id="L274">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that finds all visits between a doctor and a
+   * patient given a date range.
+   *
+   * @param docUsername A String, representing a doctor's username.
+   * @param patientID   A String, representing a patientID.
+   * @param dates       A List of Strings, representing a date range.
+   * @return A List of VisitDatums, representing all visits between a doctor and a
+   *         patient in a given dateRange.
+   */
+  public static List&lt;VisitDatum&gt; getVisitsFromDateRanges(String docUsername, String patientID,
+      List&lt;String&gt; dates) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L292">      List&lt;VisitDatum&gt; toRet = new ArrayList&lt;VisitDatum&gt;();</span>
+<span class="fc" id="L293">      prep = conn.prepareStatement(</span>
+<span class="fc" id="L294">          &quot;SELECT * FROM appointments WHERE doctor_username = ? AND patient_id = ? &quot;</span>
+              + &quot;AND appointment_date BETWEEN ? AND ?&quot;);
+<span class="fc" id="L296">      prep.setString(1, docUsername);</span>
+<span class="fc" id="L297">      prep.setString(2, patientID);</span>
+<span class="fc" id="L298">      prep.setString(3, dates.get(0));</span>
+<span class="fc" id="L299">      prep.setString(4, dates.get(1));</span>
+<span class="fc" id="L300">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L302">        List&lt;String&gt; details = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L303">        details.add(rs.getString(1));</span>
+<span class="fc" id="L304">        details.add(rs.getString(2));</span>
+<span class="fc" id="L305">        details.add(rs.getString(3));</span>
+<span class="fc" id="L306">        details.add(rs.getString(4));</span>
+<span class="fc" id="L307">        VisitDatum curr = new VisitDatum(details, rs.getBytes(COL7), rs.getBytes(6),</span>
+<span class="fc" id="L308">            rs.getString(5), rs.getBytes(COL9));</span>
+<span class="fc" id="L309">        toRet.add(curr);</span>
+      }
+<span class="fc" id="L311">      rs.close();</span>
+<span class="fc" id="L312">      return toRet;</span>
+<span class="nc" id="L313">    } catch (SQLException e) {</span>
+<span class="nc" id="L314">      System.err.println(&quot;ERROR: No visits found&quot;);</span>
+<span class="nc" id="L315">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that finds all visits given a doctor's
+   * username, a patient's ID, and a list of visit IDs.
+   *
+   * @param docUsername A String, representing a doctor's username.
+   * @param patientID   A String, representing a patient's ID.
+   * @param ids         A Set of Strings, representing visits IDs.
+   * @return A List of VisitDatums, representing a list of visits corresponding to
+   *         the doctor's ID, patient ID, and visit IDs.
+   */
+  public static List&lt;VisitDatum&gt; getVisitsFromIds(String docUsername, String patientID,
+      Set&lt;String&gt; ids) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L333">      List&lt;VisitDatum&gt; toRet = new ArrayList&lt;VisitDatum&gt;();</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">      for (String id : ids) {</span>
+<span class="fc" id="L335">        prep = conn.prepareStatement(&quot;SELECT * FROM appointments WHERE &quot;</span>
+            + &quot;doctor_username = ? AND patient_id = ? AND visit_id = ?&quot;);
+<span class="fc" id="L337">        prep.setString(1, docUsername);</span>
+<span class="fc" id="L338">        prep.setString(2, patientID);</span>
+<span class="fc" id="L339">        prep.setString(3, id);</span>
+<span class="fc" id="L340">        ResultSet rs = prep.executeQuery();</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">        while (rs.next()) {</span>
+<span class="fc" id="L342">          List&lt;String&gt; details = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L343">          details.add(rs.getString(1));</span>
+<span class="fc" id="L344">          details.add(rs.getString(2));</span>
+<span class="fc" id="L345">          details.add(rs.getString(3));</span>
+<span class="fc" id="L346">          details.add(rs.getString(4));</span>
+<span class="fc" id="L347">          VisitDatum curr = new VisitDatum(details, rs.getBytes(COL7), rs.getBytes(6),</span>
+<span class="fc" id="L348">              rs.getString(5), rs.getBytes(COL9));</span>
+<span class="fc" id="L349">          toRet.add(curr);</span>
+        }
+<span class="fc" id="L351">        rs.close();</span>
+      }
+<span class="fc" id="L353">      return toRet;</span>
+<span class="nc" id="L354">    } catch (SQLException e) {</span>
+<span class="nc" id="L355">      System.err.println(&quot;ERROR: No visits found&quot;);</span>
+<span class="nc" id="L356">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that retrieves the audio recording for a
+   * giiven viisit.
+   *
+   * @param docUsername A String, representing a doctor's username.
+   * @param patientID   A String, representing a patient's ID.
+   * @param id          A String, representing a visit ID.
+   * @return A String, representing a path to a visit's audtio file.
+   */
+  public static String getAudio(String docUsername, String patientID, String id) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L372">      prep = conn.prepareStatement(&quot;SELECT audio_file FROM appointments &quot;</span>
+          + &quot;WHERE doctor_username = ? AND patient_id = ? AND visit_id = ?&quot;);
+<span class="fc" id="L374">      prep.setString(1, docUsername);</span>
+<span class="fc" id="L375">      prep.setString(2, patientID);</span>
+<span class="fc" id="L376">      prep.setString(3, id);</span>
+<span class="fc" id="L377">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L378">      String toRet = null;</span>
+<span class="fc bfc" id="L379" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L380">        toRet = Encryption.decrypt(rs.getBytes(1));</span>
+      }
+<span class="fc" id="L382">      rs.close();</span>
+<span class="fc" id="L383">      return toRet;</span>
+<span class="nc" id="L384">    } catch (SQLException e) {</span>
+<span class="nc" id="L385">      System.err.println(&quot;ERROR: No audio file found&quot;);</span>
+<span class="nc" id="L386">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that gets the transcript for a certain visit.
+   *
+   * @param docUsername A String, representing a doctor's username.
+   * @param patientID   A String, representing a patient ID.
+   * @param id          A String, representing a visit ID.
+   * @return A String, representing the visit's transcript.
+   */
+  public static String getTranscript(String docUsername, String patientID, String id) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L401">      prep = conn.prepareStatement(&quot;SELECT transcript FROM appointments &quot;</span>
+          + &quot;WHERE doctor_username = ? AND patient_id = ? AND visit_id = ?&quot;);
+<span class="fc" id="L403">      prep.setString(1, docUsername);</span>
+<span class="fc" id="L404">      prep.setString(2, patientID);</span>
+<span class="fc" id="L405">      prep.setString(3, id);</span>
+<span class="fc" id="L406">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L407">      String toRet = null;</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L409">        toRet = Encryption.decrypt(rs.getBytes(1));</span>
+      }
+<span class="fc" id="L411">      rs.close();</span>
+<span class="fc" id="L412">      return toRet;</span>
+<span class="nc" id="L413">    } catch (SQLException e) {</span>
+<span class="nc" id="L414">      System.err.println(&quot;ERROR: No audio file found&quot;);</span>
+<span class="nc" id="L415">      return null;</span>
+    }
+  }
+
+  /**
+   * This method executes the query that finds summary of a certain visit.
+   *
+   * @param docUsername A String, representing the a doctor's username.
+   * @param patientID   A String, representing a patient's ID.
+   * @param id          A String, representing a visit's ID.
+   * @return A String, representing a visit's summary.
+   */
+  public static String getSummary(String docUsername, String patientID, String id) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L430">      prep = conn.prepareStatement(&quot;SELECT summary FROM appointments &quot;</span>
+          + &quot;WHERE doctor_username = ? AND patient_id = ? AND visit_id = ?&quot;);
+<span class="fc" id="L432">      prep.setString(1, docUsername);</span>
+<span class="fc" id="L433">      prep.setString(2, patientID);</span>
+<span class="fc" id="L434">      prep.setString(3, id);</span>
+<span class="fc" id="L435">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L436">      String toRet = null;</span>
+<span class="fc bfc" id="L437" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L438">        toRet = Encryption.decrypt(rs.getBytes(1));</span>
+      }
+<span class="fc" id="L440">      rs.close();</span>
+<span class="fc" id="L441">      return toRet;</span>
+<span class="nc" id="L442">    } catch (SQLException e) {</span>
+<span class="nc" id="L443">      System.err.println(&quot;ERROR: No audio file found&quot;);</span>
+<span class="nc" id="L444">      return null;</span>
+    }
+
+  }
+
+  /**
+   * This method executes the query that finds visitType of a certain visit.
+   *
+   * @param docUsername A String, representing the a doctor's username.
+   * @param patientID   A String, representing a patient's ID.
+   * @param id          A String, representing a visit's ID.
+   * @return A String, representing a visit's type.
+   */
+  public static String getVisitType(String docUsername, String patientID, String id) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L460">      prep = conn.prepareStatement(&quot;SELECT visit_type FROM appointments &quot;</span>
+          + &quot;WHERE doctor_username = ? AND patient_id = ? AND visit_id = ?&quot;);
+<span class="fc" id="L462">      prep.setString(1, docUsername);</span>
+<span class="fc" id="L463">      prep.setString(2, patientID);</span>
+<span class="fc" id="L464">      prep.setString(3, id);</span>
+<span class="fc" id="L465">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L466">      String toRet = null;</span>
+<span class="fc bfc" id="L467" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L468">        toRet = Encryption.decrypt(rs.getBytes(1));</span>
+      }
+<span class="fc" id="L470">      rs.close();</span>
+<span class="fc" id="L471">      return toRet;</span>
+<span class="nc" id="L472">    } catch (SQLException e) {</span>
+<span class="nc" id="L473">      System.err.println(&quot;ERROR: No visit type found&quot;);</span>
+<span class="nc" id="L474">      return null;</span>
+    }
+
+  }
+
+  /**
+   * This method executes the query that gets all transcripts for a set of visits.
+   *
+   * @param id A String, representing a patient ID.
+   * @return A Map from String to String, representing dates and transcripts for
+   *         visits.
+   */
+  public static Map&lt;String, String&gt; getAllTranscripts(String id) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L489">      prep = conn</span>
+<span class="fc" id="L490">          .prepareStatement(&quot;SELECT visit_id, transcript FROM appointments WHERE patient_id = ?&quot;);</span>
+<span class="fc" id="L491">      prep.setString(1, id);</span>
+<span class="fc" id="L492">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L493">      Map&lt;String, String&gt; transcripts = new HashMap&lt;String, String&gt;();</span>
+<span class="fc bfc" id="L494" title="All 2 branches covered.">      while (rs.next()) {</span>
+<span class="fc" id="L495">        transcripts.put(rs.getString(1), Encryption.decrypt(rs.getBytes(2)));</span>
+      }
+<span class="fc" id="L497">      rs.close();</span>
+<span class="fc" id="L498">      return transcripts;</span>
+<span class="nc" id="L499">    } catch (SQLException e) {</span>
+<span class="nc" id="L500">      System.err.println(&quot;ERROR: Patient not found&quot;);</span>
+<span class="nc" id="L501">      return null;</span>
+    }
+  }
+
+  /**
+   * Get patient last name by last name, used for testing.
+   *
+   * @param firstName of patient
+   * @return last name
+   */
+  public static String getPatientByName(String firstName) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L514">      prep = conn.prepareStatement(&quot;SELECT last_name FROM patient WHERE first_name = ?&quot;);</span>
+<span class="fc" id="L515">      prep.setString(1, firstName);</span>
+<span class="fc" id="L516">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L517">      String toRet = rs.getString(1);</span>
+<span class="fc" id="L518">      rs.close();</span>
+<span class="fc" id="L519">      return toRet;</span>
+<span class="fc" id="L520">    } catch (SQLException e) {</span>
+<span class="fc" id="L521">      System.err.println(&quot;ERROR: Patient not found&quot;);</span>
+<span class="fc" id="L522">      return null;</span>
+    }
+  }
+
+  /**
+   * Get date by doctor username.
+   *
+   * @param docName for visit
+   * @return date
+   */
+  public static String getDateByDoctorName(String docName) {
+    PreparedStatement prep;
+    try {
+<span class="fc" id="L535">      prep = conn</span>
+<span class="fc" id="L536">          .prepareStatement(&quot;SELECT appointment_date FROM appointments WHERE doctor_username = ?&quot;);</span>
+<span class="fc" id="L537">      prep.setString(1, docName);</span>
+<span class="fc" id="L538">      ResultSet rs = prep.executeQuery();</span>
+<span class="fc" id="L539">      String toRet = rs.getString(1);</span>
+<span class="fc" id="L540">      rs.close();</span>
+<span class="fc" id="L541">      return toRet;</span>
+<span class="fc" id="L542">    } catch (SQLException e) {</span>
+<span class="fc" id="L543">      System.err.println(&quot;ERROR: Patient not found&quot;);</span>
+<span class="fc" id="L544">      return null;</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

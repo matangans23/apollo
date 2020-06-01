@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AcceptablePhrases.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">transcriptparser</a> &gt; <span class="el_source">AcceptablePhrases.java</span></div><h1>AcceptablePhrases.java</h1><pre class="source lang-java linenums">package transcriptparser;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * This class outlines all acceptable phrases that a doctor can say for our
+ * software to transcribe symptoms and a patient's reasons for visit.
+ *
+ */
+public final class AcceptablePhrases {
+
+  /**
+   * Empty constructor.
+   */
+  private AcceptablePhrases() {
+    // not called
+  }
+
+  /**
+   * This method outlines acceptables phrases to begin listening for symtpoms.
+   *
+   * @return A List of Strings, representing all acceptable phrases to begin
+   *         listening for symptoms.
+   */
+  public static List&lt;String&gt; getSymptomsStartPhrases() {
+<span class="fc" id="L27">    List&lt;String&gt; start = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L28">    start.add(&quot;start symptoms&quot;);</span>
+<span class="fc" id="L29">    start.add(&quot;Start symptoms&quot;);</span>
+<span class="fc" id="L30">    start.add(&quot;begin symptoms&quot;);</span>
+<span class="fc" id="L31">    start.add(&quot;Begin symptoms&quot;);</span>
+<span class="fc" id="L32">    start.add(&quot;what are your symptoms&quot;);</span>
+<span class="fc" id="L33">    start.add(&quot;What are your symptoms&quot;);</span>
+<span class="fc" id="L34">    start.add(&quot;what symptoms do you have&quot;);</span>
+<span class="fc" id="L35">    start.add(&quot;What symptoms do you have&quot;);</span>
+<span class="fc" id="L36">    return start;</span>
+  }
+
+  /**
+   * This method outlines acceptable phrases to stop listening for symptoms.
+   *
+   * @return A List of Strings, representing all acceptable phrases to stop
+   *         listening for symptoms.
+   */
+  public static List&lt;String&gt; getSymptomsEndPhrases() {
+<span class="fc" id="L46">    List&lt;String&gt; end = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L47">    end.add(&quot;end symptoms&quot;);</span>
+<span class="fc" id="L48">    end.add(&quot;End symptoms&quot;);</span>
+<span class="fc" id="L49">    end.add(&quot;stop symptoms&quot;);</span>
+<span class="fc" id="L50">    end.add(&quot;Stop symptoms&quot;);</span>
+<span class="fc" id="L51">    end.add(&quot;stopped symptoms&quot;);</span>
+<span class="fc" id="L52">    end.add(&quot;Stopped symptoms&quot;);</span>
+<span class="fc" id="L53">    end.add(&quot;. Symptoms&quot;);</span>
+<span class="fc" id="L54">    end.add(&quot;no more symptoms&quot;);</span>
+<span class="fc" id="L55">    end.add(&quot;No more symptoms&quot;);</span>
+<span class="fc" id="L56">    return end;</span>
+  }
+
+  /**
+   * This method outlines all acceptable phrases to start listening for reasons
+   * for a patient's visit.
+   *
+   * @return A List of Strings, representing all acceptable phrases to start
+   *         listening for reasons for a patient's visit.
+   */
+  public static List&lt;String&gt; getVisitStartPhrases() {
+<span class="fc" id="L67">    List&lt;String&gt; start = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L68">    start.add(&quot;start reasons&quot;);</span>
+<span class="fc" id="L69">    start.add(&quot;Start reasons&quot;);</span>
+<span class="fc" id="L70">    start.add(&quot;begin reasons&quot;);</span>
+<span class="fc" id="L71">    start.add(&quot;Begin reasons&quot;);</span>
+<span class="fc" id="L72">    start.add(&quot;what are your reasons&quot;);</span>
+<span class="fc" id="L73">    start.add(&quot;What are your reasons&quot;);</span>
+<span class="fc" id="L74">    start.add(&quot;what brings you here today&quot;);</span>
+<span class="fc" id="L75">    start.add(&quot;What brings you here today&quot;);</span>
+<span class="fc" id="L76">    return start;</span>
+  }
+
+  /**
+   * This method outlines all acceptable phrases to stop listening for reasons for
+   * a patient's visit.
+   *
+   * @return A List of Strings, representing all acceptable phrases to stop
+   *         listening for reasons for a patient's visit.
+   */
+  public static List&lt;String&gt; getVisitEndPhrases() {
+<span class="fc" id="L87">    List&lt;String&gt; end = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L88">    end.add(&quot;end reasons&quot;);</span>
+<span class="fc" id="L89">    end.add(&quot;End reasons&quot;);</span>
+<span class="fc" id="L90">    end.add(&quot;stop reasons&quot;);</span>
+<span class="fc" id="L91">    end.add(&quot;Stop reasons&quot;);</span>
+<span class="fc" id="L92">    end.add(&quot;stopped reasons&quot;);</span>
+<span class="fc" id="L93">    end.add(&quot;Stopped reasons&quot;);</span>
+<span class="fc" id="L94">    end.add(&quot;. Reasons&quot;);</span>
+<span class="fc" id="L95">    end.add(&quot;no more reasons&quot;);</span>
+<span class="fc" id="L96">    end.add(&quot;No more reasons&quot;);</span>
+<span class="fc" id="L97">    return end;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReplHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apollo</a> &gt; <a href="index.source.html" class="el_package">repl</a> &gt; <span class="el_source">ReplHandler.java</span></div><h1>ReplHandler.java</h1><pre class="source lang-java linenums">package repl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import commands.ConnectToDatabase;
+import transcriptparser.SearchAllTranscripts;
+import transcriptparser.ToParse;
+
+/**
+ * This class will handle the lines that are read from the repl.
+ */
+public class ReplHandler {
+  private HashMap&lt;String, Executable&gt; commandHashMap;
+
+  /**
+   * The constructor. Here is the hashmap of strings and classes that implement
+   * the Executable interface. Removes the need for one giant IF statement.
+   */
+<span class="fc" id="L22">  public ReplHandler() {</span>
+<span class="fc" id="L23">    commandHashMap = new HashMap&lt;String, Executable&gt;();</span>
+<span class="fc" id="L24">    commandHashMap.put(&quot;build&quot;, new ConnectToDatabase());</span>
+<span class="fc" id="L25">    commandHashMap.put(&quot;parseTranscript&quot;, new ToParse());</span>
+<span class="fc" id="L26">    commandHashMap.put(&quot;searchAll&quot;, new SearchAllTranscripts());</span>
+<span class="fc" id="L27">  }</span>
+
+  /**
+   * Takes in the string from the REPL and runs the proper command.
+   *
+   * @param input string that the user types in in the REPl.
+   */
+  public void processLine(String input) {
+<span class="fc" id="L35">    ArrayList&lt;String&gt; inputSplit = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L36">    Pattern regex = Pattern.compile(&quot;(\&quot;[^\&quot;]*\&quot;|'[^']*'|[\\S]+)+&quot;);</span>
+<span class="fc" id="L37">    Matcher regexMatcher = regex.matcher(input);</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">    while (regexMatcher.find()) {</span>
+<span class="fc" id="L39">      inputSplit.add(regexMatcher.group());</span>
+    }
+<span class="pc bpc" id="L41" title="2 of 4 branches missed.">    if (inputSplit.size() == 0 || !commandHashMap.containsKey(inputSplit.get(0))) {</span>
+<span class="fc" id="L42">      System.err.println(&quot;ERROR: Input Valid Command&quot;);</span>
+<span class="fc" id="L43">    } else {</span>
+<span class="nc" id="L44">      commandHashMap.get(inputSplit.get(0)).executeCommand(inputSplit);</span>
+
+    }
+<span class="fc" id="L47">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

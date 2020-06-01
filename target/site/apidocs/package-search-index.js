@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"apollo"},{"l":"commands"},{"l":"databases"},{"l":"patient"},{"l":"registrationandlogin"},{"l":"repl"},{"l":"searchalgorithms"},{"l":"speechtotext"},{"l":"transcriptparser"}]

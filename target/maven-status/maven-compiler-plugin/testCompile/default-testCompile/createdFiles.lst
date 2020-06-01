@@ -1,0 +1,12 @@
+ParserTest.class
+ConnectToDatabaseTest.class
+KMPTest.class
+EncryptionTest.class
+AllSearchTest.class
+RegisterTest.class
+DatabaseTest.class
+DisplayPatientTest.class
+LoginTest.class
+DisplayVisitTest.class
+PatientTest.class
+StartSpeechToTextTest.class
